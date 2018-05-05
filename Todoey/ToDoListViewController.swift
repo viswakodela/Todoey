@@ -13,9 +13,16 @@ class ToDoListViewController: UITableViewController {
     
     var itemArray = ["Buy Eggs", "Buy Potatos", "Check my phone"]
     
+    let defaults = UserDefaults.standard
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {
+            
+            itemArray = items
+        }
+            
         
         
     }
@@ -53,6 +60,9 @@ class ToDoListViewController: UITableViewController {
             tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
         }
         
+        
+        // deselectRow() is a method whcich is used to controle the animations, when the user presses any row its color will chnages to gray and will become still with that grey color. If we use deselect() method we can animate the pressed row in thetable with grey color.
+        
         tableView.deselectRow(at: indexPath, animated: true)
         
     }
@@ -65,9 +75,11 @@ class ToDoListViewController: UITableViewController {
         
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             
-            print(textField.text)
+            // anything written in this clousers, is the code this happens when the user clicks the "Add Items" Button in the Alert Cotroller.
             
             self.itemArray.append(textField.text!)
+            
+            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
             
             self.tableView.reloadData()
             
@@ -85,10 +97,7 @@ class ToDoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
         
     }
-    
 
-    
-    
 
 }
 
