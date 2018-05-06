@@ -11,18 +11,30 @@ import UIKit
 class ToDoListViewController: UITableViewController {
 
     
-    var itemArray = ["Buy Eggs", "Buy Potatos", "Check my phone"]
-    
+    var itemArray = [item]()
     let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
+
         
-        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {
-            
+        let newItem = item()
+        newItem.title = "Buy Eggs"
+        itemArray.append(newItem)
+        
+        let newItem2 = item()
+        newItem2.title = "Watch my Phone"
+        itemArray.append(newItem2)
+        
+        let newItem3 = item()
+        newItem3.title = "Meeting with Chatby"
+        itemArray.append(newItem3)
+        
+        if let items = defaults.array(forKey: "ToDoListArray") as? [item] {
+
             itemArray = items
         }
-            
+        
         
         
     }
@@ -40,7 +52,20 @@ class ToDoListViewController: UITableViewController {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         
-        cell.textLabel?.text = itemArray[indexPath.row]
+        let item = itemArray[indexPath.row]
+        
+        cell.textLabel?.text = item.title
+        
+        // Trenary Operator
+        // Value = Contion ? ValueIfTrue : ValueIfFalse
+        
+        cell.accessoryType = item.done == true ? .checkmark : .none
+        
+//        if itemArray[indexPath.row].done == true {
+//            cell.accessoryType = .checkmark
+//        }else{
+//            cell.accessoryType = .none
+//        }
         
         
         return cell
@@ -52,13 +77,15 @@ class ToDoListViewController: UITableViewController {
         
         // print(itemArray[indexPath.row])
         
-
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        }else {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+        tableView.reloadData()
+        
+//        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
+//            tableView.cellForRow(at: indexPath)?.accessoryType = .none
+//        }else {
+//            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
+//        }
         
         
         // deselectRow() is a method whcich is used to controle the animations, when the user presses any row its color will chnages to gray and will become still with that grey color. If we use deselect() method we can animate the pressed row in thetable with grey color.
@@ -77,7 +104,10 @@ class ToDoListViewController: UITableViewController {
             
             // anything written in this clousers, is the code this happens when the user clicks the "Add Items" Button in the Alert Cotroller.
             
-            self.itemArray.append(textField.text!)
+            let newItem = item()
+            newItem.title = textField.text!
+            
+            self.itemArray.append(newItem)
             
             self.defaults.set(self.itemArray, forKey: "ToDoListArray")
             
