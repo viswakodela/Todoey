@@ -8,7 +8,9 @@
 
 import Foundation
 
-class item {
+// Instead of writing both Encodable and Decodable we can just write Coadable
+
+class item: Encodable,Decodable {
     
     
     var title: String = ""
