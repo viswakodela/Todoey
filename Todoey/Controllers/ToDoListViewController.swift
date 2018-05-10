@@ -7,43 +7,31 @@
 //
 
 import UIKit
+import CoreData
 
 class ToDoListViewController: UITableViewController {
 
     
-    var itemArray = [item]()
+    var itemArray = [Item]()
     
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+//    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    
+     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
         
-
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         
-        print(dataFilePath!)
+        // MARK: - loadItem() here is for Read in CURD
         
-        let newItem = item()
-        newItem.title = "Buy Eggs"
-        itemArray.append(newItem)
-        
-        let newItem2 = item()
-        newItem2.title = "Watch my Phone"
-        itemArray.append(newItem2)
-        
-        let newItem3 = item()
-        newItem3.title = "Meeting with Chatby"
-        itemArray.append(newItem3)
-        
-        
-        
-        loadItem()
+          loadItem()
         
         
     }
     
-    //MARK - Tavleview Datasourse Methods
+    // MARK: - Tavleview Datasourse Methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
@@ -60,7 +48,7 @@ class ToDoListViewController: UITableViewController {
         
         cell.textLabel?.text = item.title
         
-        // Trenary Operator
+        // Terenary Operator
         // Value = Contion ? ValueIfTrue : ValueIfFalse
         
         cell.accessoryType = item.done == true ? .checkmark : .none
@@ -75,11 +63,18 @@ class ToDoListViewController: UITableViewController {
         return cell
     }
 
-    //MARK - Tableview Delegate Methods
+    //MARK: - Tableview Delegate Methods
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         // print(itemArray[indexPath.row])
+        
+        
+        // MARK: Delete in CURD
+        
+//        context.delete(itemArray[indexPath.row])
+//        itemArray.remove(at: indexPath.row)
+        
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
@@ -110,11 +105,17 @@ class ToDoListViewController: UITableViewController {
             
             // anything written in this clousers, is the code this happens when the user clicks the "Add Items" Button in the Alert Cotroller.
             
-            let newItem = item()
-            newItem.title = textField.text!
+            // let newItem = item()
             
+           
+            
+            let newItem = Item(context: self.context)
+            
+            newItem.title = textField.text!
+            newItem.done = false
             self.itemArray.append(newItem)
             
+            // MARK: -  saveItem() here is for create in CRUD
             self.saveItems()
 
             
@@ -133,43 +134,58 @@ class ToDoListViewController: UITableViewController {
         
     }
     
+    
+            // MARK: Create in CURD
+    
     func saveItems() {
         
-        let encoder = PropertyListEncoder()
+        
         
         do{
-            
-            let data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
+                try context.save()
         }catch {
-            
-            print("Error encoding item array \(error)")
-            
+            print("Error saving context \(error)")
         }
         
         tableView.reloadData()
         
     }
     
-    func loadItem() {
+            // MARK: Read in CURD
+    
+    func loadItem(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
+
         
-        let decoder = PropertyListDecoder()
-        
-        if let data = try? Data(contentsOf: dataFilePath!){
+        do {
+           itemArray =  try context.fetch(request)
+        }
+        catch{
             
-            do{
-                itemArray = try decoder.decode([item].self, from: data)
-            }catch{
-                
-                print("Error decoding Item Array \(error)")
-                
-            }
-            
+            print("Error fetching data from context \(error)")
         }
         
-        
+        tableView.reloadData()
     }
 
 
+}
+
+// MARK: - UISearchBar Delegate Methods
+
+extension ToDoListViewController: UISearchBarDelegate{
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        
+        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+        
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        
+        loadItem(with: request)
+
+
+    }
+    
 }
 
