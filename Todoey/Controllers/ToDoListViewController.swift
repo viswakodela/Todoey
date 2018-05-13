@@ -119,6 +119,7 @@ class ToDoListViewController: UITableViewController {
             
             newItem.title = textField.text!
             newItem.done = false
+            // the line below is the reason for attaching the parent and the item
             newItem.parentCategory = self.selectedCategory
             self.itemArray.append(newItem)
             
@@ -145,9 +146,7 @@ class ToDoListViewController: UITableViewController {
             // MARK: Create in CURD
     
     func saveItems() {
-        
-        
-        
+
         do{
                 try context.save()
         }catch {
@@ -169,7 +168,7 @@ class ToDoListViewController: UITableViewController {
             request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
             
         }else {
-            
+            // this line of code is calling all the item Data list related to the matching Category
             request.predicate = categoryPredicate
         }
         

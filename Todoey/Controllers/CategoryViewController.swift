@@ -75,7 +75,7 @@ class CategoryViewController: UITableViewController {
         
 //        context.delete(categoryArray[indexPath.row])
 //        tableView.delete(categoryArray[indexPath.row])
-        
+    
         performSegue(withIdentifier: "goToItems", sender: self)
         
         tableView.deselectRow(at: indexPath, animated: true)
