@@ -7,13 +7,14 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class ToDoListViewController: UITableViewController {
 
     
-    var itemArray = [Item]()
-    var selectedCategory: Category?{
+    var todoItems: Results<Item>?
+    let realm = try! Realm()
+    var selectedCategory: Category? {
         didSet{
             
             loadItem()
@@ -24,7 +25,7 @@ class ToDoListViewController: UITableViewController {
     
 //    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
-     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+     //let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     
     override func viewDidLoad() {
@@ -32,8 +33,7 @@ class ToDoListViewController: UITableViewController {
         
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         
-        // MARK: - loadItem() here is for Read in CURD
-             // loadItem()
+
         
     }
     
@@ -41,7 +41,7 @@ class ToDoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
-        return itemArray.count
+        return todoItems?.count ?? 1
         
     }
     
@@ -50,14 +50,22 @@ class ToDoListViewController: UITableViewController {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         
-        let item = itemArray[indexPath.row]
+        if let item = todoItems?[indexPath.row] {
+            
+            cell.textLabel?.text = item.title
+            // Terenary Operator
+            // Value = Contion ? ValueIfTrue : ValueIfFalse
+            
+            cell.accessoryType = item.done == true ? .checkmark : .none
+        }
+        else {
+            
+            cell.textLabel?.text = "No items Added"
+            
+        }
         
-        cell.textLabel?.text = item.title
         
-        // Terenary Operator
-        // Value = Contion ? ValueIfTrue : ValueIfFalse
         
-        cell.accessoryType = item.done == true ? .checkmark : .none
         
 //        if itemArray[indexPath.row].done == true {
 //            cell.accessoryType = .checkmark
@@ -73,7 +81,6 @@ class ToDoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        // print(itemArray[indexPath.row])
         
         
         // MARK: Delete in CURD
@@ -82,9 +89,16 @@ class ToDoListViewController: UITableViewController {
 //        itemArray.remove(at: indexPath.row)
         
         
-        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
-        
-        saveItems()
+        if let item = todoItems?[indexPath.row] {
+            do{
+            try realm.write {
+                //realm.delete(item)
+               item.done = !item.done
+            }
+            }catch{
+                print("Error saving done status \(error)")
+            }
+        }
         
         tableView.reloadData()
         
@@ -102,85 +116,61 @@ class ToDoListViewController: UITableViewController {
     }
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
-        
-        var textField = UITextField()
-        
-        let alert = UIAlertController(title: "Add new Todo Item", message: "", preferredStyle: .alert)
-        
-        let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
-            
-            // anything written in this clousers, is the code this happens when the user clicks the "Add Items" Button in the Alert Cotroller.
-            
-            // let newItem = item()
-            
-           
-            
-            let newItem = Item(context: self.context)
-            
-            newItem.title = textField.text!
-            newItem.done = false
-            // the line below is the reason for attaching the parent and the item
-            newItem.parentCategory = self.selectedCategory
-            self.itemArray.append(newItem)
-            
-            // MARK: -  saveItem() here is for create in CRUD
-            self.saveItems()
 
+        var textField = UITextField()
+
+        let alert = UIAlertController(title: "Add new Todo Item", message: "", preferredStyle: .alert)
+
+        let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
+
+            // anything written in this clousers, is the code this happens when the user clicks the "Add Items" Button in the Alert Cotroller.
+
+            // let newItem = item()
+
+
+            if let currentCategory = self.selectedCategory {
+                
+                do{
+                    // Saving the Data
+                    try self.realm.write {
+                        let newItem = Item()
+                        newItem.title = textField.text!
+                        newItem.dateCreated = Date()
+                        currentCategory.items.append(newItem)
+                    }
+                }catch {
+                    print("Error saving new item \(error)")
+                
+            }
             
+                self.tableView.reloadData()
+            
+            // the line below is the reason for attaching the parent and the item
+            //newItem.parentCategory = self.selectedCategory?
+            
+
+
         }
-        
+    }
+
         alert.addTextField { (alertTextField) in
-            
+
             alertTextField.placeholder = "Create new item"
             textField = alertTextField
-            
+
         }
-        
         alert.addAction(action)
         
         present(alert, animated: true, completion: nil)
-        
     }
     
-    
-            // MARK: Create in CURD
-    
-    func saveItems() {
 
-        do{
-                try context.save()
-        }catch {
-            print("Error saving context \(error)")
-        }
-        
-        tableView.reloadData()
-        
-    }
     
-            // MARK: Read in CURD
-    
-    func loadItem(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil) {
-        
-        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", (selectedCategory!.name)!)
-        
-        if let additionalPredicate = predicate{
-            
-            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
-            
-        }else {
-            // this line of code is calling all the item Data list related to the matching Category
-            request.predicate = categoryPredicate
-        }
-        
+    func loadItem() {
 
-        
-        do {
-           itemArray =  try context.fetch(request)
-        }
-        catch{
-            print("Error fetching data from context \(error)")
-        }
-        
+ 
+        todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
+
         tableView.reloadData()
     }
 
@@ -190,32 +180,29 @@ class ToDoListViewController: UITableViewController {
 // MARK: - UISearchBar Delegate Methods
 
 extension ToDoListViewController: UISearchBarDelegate{
-    
+
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         
-        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
         
-        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
-        
-        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
-        
-        loadItem(with: request, predicate: predicate)
+        tableView.reloadData()
     }
-    
+
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+
         if searchBar.text?.count == 0 {
             loadItem()
-           
+
             DispatchQueue.main.async {
                 searchBar.resignFirstResponder()
             }
-            
+
         }
     }
-    
-    
-    
-    
+
     
 }
+    
+    
+
 
