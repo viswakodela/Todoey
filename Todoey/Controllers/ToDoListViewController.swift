@@ -9,7 +9,7 @@
 import UIKit
 import RealmSwift
 
-class ToDoListViewController: UITableViewController {
+class ToDoListViewController: SwipeTableViewController {
 
     
     var todoItems: Results<Item>?
@@ -17,6 +17,7 @@ class ToDoListViewController: UITableViewController {
     var selectedCategory: Category? {
         didSet{
             
+            tableView.rowHeight = 80
             loadItem()
             
         }
@@ -48,21 +49,16 @@ class ToDoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
-        if let item = todoItems?[indexPath.row] {
+        
             
-            cell.textLabel?.text = item.title
+            cell.textLabel?.text = todoItems?[indexPath.row].title ?? "No Items added"
             // Terenary Operator
             // Value = Contion ? ValueIfTrue : ValueIfFalse
             
-            cell.accessoryType = item.done == true ? .checkmark : .none
-        }
-        else {
-            
-            cell.textLabel?.text = "No items Added"
-            
-        }
+            cell.accessoryType = todoItems?[indexPath.row].done == true ? .checkmark : .none
+        
         
         
         
@@ -172,6 +168,19 @@ class ToDoListViewController: UITableViewController {
         todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
 
         tableView.reloadData()
+    }
+    
+    override func updateTableView(at indexPath: IndexPath) {
+        if let item = selectedCategory?.items[indexPath.row] {
+            do{
+                try realm.write {
+                    realm.delete(item)
+                }
+            }catch{
+                print("Error deleting the items \(error)")
+            }
+            
+        }
     }
 
 
