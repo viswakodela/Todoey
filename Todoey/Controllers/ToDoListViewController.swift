@@ -8,6 +8,7 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 class ToDoListViewController: SwipeTableViewController {
 
@@ -23,6 +24,7 @@ class ToDoListViewController: SwipeTableViewController {
         }
         
     }
+    @IBOutlet weak var searchBar: UISearchBar!
     
 //    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
@@ -33,9 +35,31 @@ class ToDoListViewController: SwipeTableViewController {
         super.viewDidLoad()
         
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+            tableView.separatorStyle = .none
+      
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
         
-
+        title = selectedCategory?.name
+        guard let navBar = navigationController?.navigationBar else {fatalError("Navigation Controller does not exist")}
+        guard let colorHex = selectedCategory?.color else {fatalError()}
+            
         
+            searchBar.barTintColor = UIColor(hexString: colorHex)
+            
+            
+        guard let navBarColor = UIColor(hexString: colorHex) else{fatalError()}
+                navBar.tintColor = ContrastColorOf(navBarColor, returnFlat: true)
+                navBar.largeTitleTextAttributes = [NSAttributedStringKey.foregroundColor: ContrastColorOf(navBarColor, returnFlat: true)]
+                navBar.barTintColor = navBarColor
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        guard let originalColor = UIColor(hexString: "1D9BF6") else{fatalError()}
+        navigationController?.navigationBar.barTintColor = originalColor
+        navigationController?.navigationBar.tintColor = FlatWhite()
+        navigationController?.navigationBar.largeTitleTextAttributes = [NSAttributedStringKey.foregroundColor: FlatWhite()]
     }
     
     // MARK: - Tavleview Datasourse Methods
@@ -54,6 +78,16 @@ class ToDoListViewController: SwipeTableViewController {
         
             
             cell.textLabel?.text = todoItems?[indexPath.row].title ?? "No Items added"
+        
+        if let color = UIColor(hexString: selectedCategory!.color)?.darken(byPercentage: CGFloat(indexPath.row)/CGFloat(todoItems!.count)){
+            cell.backgroundColor = color
+            cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
+        }
+        
+//        print("Version 1 \(CGFloat(indexPath.row/todoItems!.count))")
+//
+//        print("Version 2 \(CGFloat(indexPath.row)/CGFloat(todoItems!.count))")
+        
             // Terenary Operator
             // Value = Contion ? ValueIfTrue : ValueIfFalse
             
@@ -105,7 +139,6 @@ class ToDoListViewController: SwipeTableViewController {
 //        }
         
         
-        // deselectRow() is a method whcich is used to controle the animations, when the user presses any row its color will chnages to gray and will become still with that grey color. If we use deselect() method we can animate the pressed row in thetable with grey color.
         
         tableView.deselectRow(at: indexPath, animated: true)
         

@@ -81,7 +81,9 @@ class CategoryViewController: SwipeTableViewController {
         if let category = categories?[indexPath.row] {
             
             cell.textLabel?.text = category.name
-            cell.backgroundColor = UIColor(hexString: categories?[indexPath.row].color ?? "FF463D")
+            guard let categoryColor = UIColor(hexString: category.color) else{fatalError()}
+            cell.backgroundColor = UIColor(hexString: category.color )
+            cell.textLabel?.textColor = ContrastColorOf(categoryColor, returnFlat: true)
         }
         return cell
     }
@@ -117,7 +119,7 @@ class CategoryViewController: SwipeTableViewController {
             do{
                 try realm.write {
                     realm.delete(categoriesForDeletion)
-            }
+                }
             }
             catch {
                     print("Error Deleting the Categories \(error)")
@@ -135,7 +137,9 @@ class CategoryViewController: SwipeTableViewController {
             try realm.write {
                 realm.add(category)
             }
-        }catch{
+        }
+        
+        catch{
            print("Error saving Categories \(error)")
         }
         tableView.reloadData()
